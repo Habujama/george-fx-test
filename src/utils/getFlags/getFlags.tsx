@@ -1,5 +1,5 @@
-const getFlag = (flagName?: string) => {
-  if (flagName === "   ") {
+const getFlag = (flagName?: string): string => {
+  if (flagName === "   " || !flagName) {
     console.error(`Flag not provided`);
     return "images/flags/fallback.png";
   }

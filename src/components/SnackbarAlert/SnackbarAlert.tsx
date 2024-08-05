@@ -15,7 +15,6 @@ const SnackbarAlert = ({ open, setOpen }: SnackbarAlertProps) => {
     if (reason === "clickaway") {
       return;
     }
-
     setOpen(false);
   };
 
@@ -25,6 +24,7 @@ const SnackbarAlert = ({ open, setOpen }: SnackbarAlertProps) => {
       autoHideDuration={4000}
       onClose={handleClose}
       anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      data-testid='alert'
     >
       <Alert
         onClose={handleClose}
@@ -32,9 +32,11 @@ const SnackbarAlert = ({ open, setOpen }: SnackbarAlertProps) => {
         variant='filled'
         sx={{ width: "100%" }}
       >
-        Exchange rates could not be loaded.
-        <br />
-        Showing mocked data.
+        <div data-testid='alert|content'>
+          Exchange rates could not be loaded.
+          <br />
+          Showing mocked data.
+        </div>
       </Alert>
     </Snackbar>
   );

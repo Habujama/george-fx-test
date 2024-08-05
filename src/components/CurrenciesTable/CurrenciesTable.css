@@ -1,11 +1,7 @@
 .table {
     height: fit-content;
+    min-height: 80vh;
     margin-top: 20px;
-}
-
-.toolbar {
-    display: flex;
-    justify-content: end;
 }
 
 .MuiDataGrid-root {

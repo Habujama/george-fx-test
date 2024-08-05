@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter as Router } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { StyledEngineProvider } from "@mui/material/styles";
 
 import "./index.css";
@@ -12,11 +12,13 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <Router>
-      <StyledEngineProvider injectFirst>
-        <App />
-      </StyledEngineProvider>
-    </Router>
+    <StyledEngineProvider injectFirst>
+      <Router>
+        <Routes>
+          <Route path='/' element={<App />} />
+        </Routes>
+      </Router>
+    </StyledEngineProvider>
   </React.StrictMode>,
 );
 
