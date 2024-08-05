@@ -11,10 +11,11 @@ import queryString from "query-string";
 import "./CurrenciesTable.css";
 
 import fx from "../../assets/fx.json";
-import NoRowsOverlay from "../NoRowsOverlay/NoRowsOverlay";
+import NoRowsOverlay from "./NoRowsOverlay/NoRowsOverlay";
 import SnackbarAlert from "../SnackbarAlert/SnackbarAlert";
-import getFlag from "./getFlag";
-import CustomGridToolbar from "./CustomGridToolbar";
+import getFlag from "../../utils/getFlags/getFlags";
+import CustomGridToolbar from "./CustomGridToolbar/CustomGridToolbar";
+import getTableHeight from "../../utils/getTableHeight/getTableHeight";
 
 interface fxProps {
   currency: string;
@@ -55,6 +56,7 @@ const CurrenciesTable = () => {
   const [quickFilterValue, setQuickFilterValue] = useState<
     string | (string | null)[]
   >("");
+  const [pageSize, setPageSize] = useState<number>(10);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -69,7 +71,7 @@ const CurrenciesTable = () => {
         const data = await response.json();
         setCurrenciesData(data);
       } else {
-        setCurrenciesData(fx);
+        setCurrenciesData(fx); // using mocked data because of the non-functioning endpoint
         setErrorSnackBarOpen(true);
       }
     } catch (error) {
@@ -108,9 +110,11 @@ const CurrenciesTable = () => {
         return {
           id: index,
           flag: getFlag(item.currency),
-          name: item.nameI18N,
+          name: item.nameI18N || "–",
           currency: item.currency,
-          rate: item.exchangeRate?.middle || 0, // Assuming middle exchange rate, fallback to 0 if not available
+          rate: item.exchangeRate?.middle
+            ? `${item.exchangeRate?.middle} ${currenciesData.baseCurrency}`
+            : "–", // Assuming middle exchange rate, fallback if not available
         };
       });
     } else {
@@ -155,8 +159,16 @@ const CurrenciesTable = () => {
   );
 
   return (
-    <div className='table'>
-      <SnackbarAlert open={errorSnackbarOpen} setOpen={setErrorSnackBarOpen} />
+    <div
+      className='table'
+      style={{ height: getTableHeight(filteredRows, pageSize) }}
+      data-testid='currencies-table'
+    >
+      <SnackbarAlert
+        open={errorSnackbarOpen}
+        setOpen={setErrorSnackBarOpen}
+        data-testid='currencies-table|alert'
+      />
       <DataGrid
         columns={tableColumnsDef}
         rows={filteredRows}
@@ -173,6 +185,7 @@ const CurrenciesTable = () => {
         }}
         initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
         pageSizeOptions={[10, 50, 100]}
+        onPaginationModelChange={(model) => setPageSize(model.pageSize)}
         slots={{
           noRowsOverlay: NoRowsOverlay,
           noResultsOverlay: NoRowsOverlay,
@@ -181,6 +194,7 @@ const CurrenciesTable = () => {
             | null
             | undefined,
         }}
+        data-testid='currencies-table|table'
       />
     </div>
   );
