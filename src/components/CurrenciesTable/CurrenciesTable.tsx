@@ -1,11 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { DataGrid } from "@mui/x-data-grid";
+import { JSXElementConstructor, useEffect, useMemo, useState } from "react";
+import {
+  DataGrid,
+  GridColDef,
+  GridToolbarProps,
+  ToolbarPropsOverrides,
+} from "@mui/x-data-grid";
+import { useLocation, useNavigate } from "react-router-dom";
+import queryString from "query-string";
 
 import "./CurrenciesTable.css";
 
 import fx from "../../assets/fx.json";
 import NoRowsOverlay from "../NoRowsOverlay/NoRowsOverlay";
 import SnackbarAlert from "../SnackbarAlert/SnackbarAlert";
+import getFlag from "./getFlag";
+import CustomGridToolbar from "./CustomGridToolbar";
 
 interface fxProps {
   currency: string;
@@ -38,11 +47,17 @@ interface CurrenciesDataProps {
 }
 
 const CurrenciesTable = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorSnackbarOpen, setErrorSnackBarOpen] = useState<boolean>(false);
   const [currenciesData, setCurrenciesData] = useState<
     CurrenciesDataProps | undefined
   >(undefined);
+  const [quickFilterValue, setQuickFilterValue] = useState<
+    string | (string | null)[]
+  >("");
+
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const loadCurrencies = async () => {
     try {
@@ -72,59 +87,99 @@ const CurrenciesTable = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    console.log("currenciesData:", JSON.stringify(currenciesData));
-    console.log("isLoading:", isLoading);
-  }, [currenciesData, isLoading]);
-
-  const TableColumnsDef = [
-    { headerName: "Flag", field: "flag", flex: 1 },
+  const tableColumnsDef: GridColDef[] = [
+    {
+      headerName: "Flag",
+      field: "flag",
+      filterable: false,
+      flex: 1,
+      renderCell: (params: { value?: string }) => (
+        <img src={params.value} alt='flag' height='20px' />
+      ),
+    },
     { headerName: "Country", field: "name", flex: 1 },
     { headerName: "Currency", field: "currency", flex: 1 },
     { headerName: "Exchange Rate", field: "rate", flex: 1 },
   ];
 
-  const TableRowsData = useMemo(() => {
+  const tableRowsData = useMemo(() => {
     if (currenciesData?.fx.length) {
-      return currenciesData.fx.map((item, index) => ({
-        id: index,
-        flag: item.flags,
-        name: item.nameI18N,
-        currency: item.currency,
-        rate: item.exchangeRate?.middle || 0, // Assuming middle exchange rate, fallback to 0 if not available
-      }));
+      return currenciesData.fx.map((item, index) => {
+        return {
+          id: index,
+          flag: getFlag(item.currency),
+          name: item.nameI18N,
+          currency: item.currency,
+          rate: item.exchangeRate?.middle || 0, // Assuming middle exchange rate, fallback to 0 if not available
+        };
+      });
     } else {
       return [];
     }
   }, [currenciesData]);
 
+  // Get search term from URL on mount
+  useEffect(() => {
+    const parsed = queryString.parse(location.search);
+    setQuickFilterValue(parsed.search || "");
+  }, [location.search]);
+
+  // Update URL when search term changes
+  useEffect(() => {
+    if (!isLoading) {
+      const params = new URLSearchParams(location.search);
+      if (quickFilterValue && typeof quickFilterValue === "string") {
+        params.set("search", quickFilterValue);
+      } else {
+        params.delete("search");
+      }
+      navigate({ search: params.toString() });
+    }
+  }, [quickFilterValue, isLoading, location.search, navigate]);
+
+  // Filter rows based on quick filter value
+  const filteredRows = useMemo(
+    () =>
+      !isLoading
+        ? tableRowsData.filter((row) => {
+            const searchValue =
+              typeof quickFilterValue === "string"
+                ? quickFilterValue.toLowerCase()
+                : "";
+            return Object.values(row).some((value) =>
+              value?.toString().toLowerCase().includes(searchValue),
+            );
+          })
+        : tableRowsData,
+    [quickFilterValue, tableRowsData, isLoading],
+  );
+
   return (
     <div className='table'>
       <SnackbarAlert open={errorSnackbarOpen} setOpen={setErrorSnackBarOpen} />
       <DataGrid
-        columns={TableColumnsDef}
-        rows={TableRowsData}
+        columns={tableColumnsDef}
+        rows={filteredRows}
         loading={isLoading}
         slotProps={{
           loadingOverlay: {
             variant: "skeleton",
             noRowsVariant: "skeleton",
           },
+          toolbar: {
+            quickFilterValue,
+            setQuickFilterValue,
+          },
         }}
+        initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+        pageSizeOptions={[10, 50, 100]}
         slots={{
           noRowsOverlay: NoRowsOverlay,
           noResultsOverlay: NoRowsOverlay,
-        }}
-        sx={{
-          ".MuiDataGrid-cell:hover": {
-            color: "primary.main",
-          },
-          ".MuiDataGrid-row:hover": {
-            backgroundColor: "rgb(40,44,52)",
-          },
-          ".MuiDataGrid-footerContainer": {
-            color: "#fff",
-          },
+          toolbar: CustomGridToolbar as
+            | JSXElementConstructor<GridToolbarProps & ToolbarPropsOverrides>
+            | null
+            | undefined,
         }}
       />
     </div>

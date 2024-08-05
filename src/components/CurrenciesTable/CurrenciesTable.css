@@ -1,6 +1,14 @@
 .table {
-    height: 600px;
     margin-top: 20px;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: end;
+}
+
+.MuiDataGrid-root {
+    overflow: unset;
 }
 
 .MuiDataGrid-footerContainer {
@@ -9,4 +17,21 @@
 
 .MuiDataGrid-row {
     color: #fff;
+}
+
+.MuiDataGrid-row:hover {
+    background-color: rgb(40,44,52);
+}
+
+.MuiDataGrid-toolbarContainer {
+    background-color: #fff;
+    padding: 4px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.MuiDataGrid-cell {
+    display: flex;
+    align-items: center;
 }
